@@ -881,7 +881,7 @@ input.btn_my_zzk {
 
 #post_detail,
 #post_detail ~ * {
-    max-width: 1000px;
+    max-width: 900px;
     margin: auto;
 }
 
@@ -2329,7 +2329,7 @@ input.btn_my_zzk {
 
 #floatingActions {
     position: fixed;
-    left: calc(50% + 525px);
+    left: calc(50% + 450px);
     bottom: 25px;
     z-index: 5;
 }
