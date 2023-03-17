@@ -1,0 +1,139 @@
+<script src="https://cdn.staticfile.org/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+
+<div id="loading">
+    <div id="loadingText">
+        Loading...
+    </div>
+</div>
+
+<div id="cleanHeader">
+    <div id="cleanNavBar">
+        <div id="cleanNavBarBody">
+            <div id="cleanNavBarLeft">
+                <div id="goToCnblogs" class="cleanNavBarLink"><a href="https://www.cnblogs.com/">CNBLOGS</a></div>
+                <div id="goToHome" class="cleanNavBarLink"> <a href="javascript:void(0)"></a> </div>
+            </div>
+            <div id="cleanNavBarRight">
+                <div id="cleanExpandSecondFloor" class="cleanNavBarLink cleanNavBarWithTooltip" onclick="expandSecondFloor()">
+                    <a href="javascript:void(0)" class="materialIcons">expand_circle_down</a>
+                    <div class="cleanNavBarTooltip">
+                        <div class="cleanNavBarTooltipBody">
+                            <div class="cleanNavBarTooltipTriangle"></div>
+                            <span class="cleanNavBarToolTipText">进入二楼</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="cleanOpenSearch" class="cleanNavBarLink cleanNavBarWithTooltip" onclick="openSearch()">
+                    <a href="javascript:void(0)" class="materialIcons">search</a>
+                    <div class="cleanNavBarTooltip">
+                        <div class="cleanNavBarTooltipBody">
+                            <div class="cleanNavBarTooltipTriangle"></div>
+                            <span class="cleanNavBarToolTipText">搜索</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="cleanToggleMode" class="cleanNavBarLink cleanNavBarWithTooltip" onclick="toggleLightDarkMode()">
+                    <a href="javascript:void(0)" class="materialIcons">dark_mode</a>
+                    <div class="cleanNavBarTooltip">
+                        <div class="cleanNavBarTooltipBody">
+                            <div class="cleanNavBarTooltipTriangle"></div>
+                            <span class="cleanNavBarToolTipText">深色模式</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="expandNativeNavBar" class="cleanNavBarLink cleanNavBarLinkWithDropDown">
+                    <a href="javascript:void(0)" class="materialIcons">more_vert</a>
+                    <div class="cleanNavBarDropDownPositioner">
+                        <div class="cleanNavBarDropDown">
+                            <div class="cleanNavBarDropDownTriangle"></div>
+                            <ul class="cleanNavBarDropDownList">
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="secondFloor">
+    <div id="secondFloorBody">
+        <div id="SecondFloorTopBar">
+            <span id="secondFloorTopBarGreeting">Yo, what’s up! 这里是二楼。</span>
+            <div id="secondFloorTopBarButtons">
+                <div id="expandCustomLinksIfTooNarrow" class="secondFloorTopBarButton cleanCustomLinkWithDropDown">
+                    <a href="javascript:void(0)" class="materialIcons">menu</a>
+                    <div class="cleanNavBarDropDownPositioner">
+                        <div class="cleanCustomDropDown">
+                            <div class="cleanNavBarDropDownTriangle"></div>
+                            <ul class="cleanNavBarDropDownList">
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <ul id="cleanCustomLinks"></ul>
+                <div id="collapseSecondFloor" class="secondFloorTopBarButton" onclick="collapseSecondFloor()">
+                    <a href="javascript:void(0)" class="materialIcons">arrow_circle_up</a>
+                </div>
+            </div>
+        </div>
+        <div id="secondFloorPersonalInfo">
+            <!-- 头像、按钮、文本 -->
+            <div id="secondFloorPersonInfoLeft">
+                <img id="secondFloorPersonalInfoAvatar" src="https://pic.cnblogs.com/avatar/simple_avatar.gif" alt="用户头像">
+                <div id="secondFloorPersonalInfoTexts">
+                    <div id="secondFloorPersonalInfoTextsUserNameAndAge">
+                        <a href="javascript:void(0)" id="secondFloorPersonalInfoTextsUserName"></a>
+                        <a href="javascript:void(0)" id="secondFloorPersonalInfoTextsAge"></a>
+                        <a href="javascript:void(0)" id="secondFloorPersonalInfoTextsHonor"></a>
+                    </div>
+                    <div id="secondFloorPersonalInfoTextsStats">
+                        <div id="secondFloorPersonalInfoTextsStatsFollowers">
+                            <a href="javascript:void(0)" class="secondFloorPersonalInfoTextsStatsNumber follower-count"></a>
+                            <span class="secondFloorPersonalInfoTextsStatsText">粉丝</span>
+                        </div>
+                        <div id="secondFloorPersonalInfoTextsStatsFollowees">
+                            <a href="javascript:void(0)" class="secondFloorPersonalInfoTextsStatsNumber folowing-count"></a>
+                            <span class="secondFloorPersonalInfoTextsStatsText">关注</span>
+                        </div>
+                        <div id="secondFloorPersonalInfoTextsStatsWritings">
+                            <a href="javascript:void(0)" class="secondFloorPersonalInfoTextsStatsNumber"></a>
+                            <span class="secondFloorPersonalInfoTextsStatsText">随笔</span>
+                        </div>
+                        <div id="secondFloorPersonalInfoTextsStatsArticles">
+                            <a href="javascript:void(0)" class="secondFloorPersonalInfoTextsStatsNumber"></a>
+                            <span class="secondFloorPersonalInfoTextsStatsText">文章</span>
+                        </div>
+                        <div id="secondFloorPersonalInfoTextsStatsComments">
+                            <a href="javascript:void(0)" class="secondFloorPersonalInfoTextsStatsNumber"></a>
+                            <span class="secondFloorPersonalInfoTextsStatsText">评论</span>
+                        </div>
+                        <div id="secondFloorPersonalInfoTextsStatsReading">
+                            <a href="javascript:void(0)" class="secondFloorPersonalInfoTextsStatsNumber"></a>
+                            <span class="secondFloorPersonalInfoTextsStatsText">阅读</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="secondFloorPersonalInfoButtons">
+                <div id="secondFloorPersonalInfoFollowUnfollow" class="secondFloorPersonalInfoButton"><a href="javascript:void(0)"></a></div>
+                <div id="secondFloorPersonalInfoContact" class="secondFloorPersonalInfoButton"><a href="javascript:void(0)" class="materialIcons">email</a></div>
+                <div id="secondFloorPersonalInfoRss" class="secondFloorPersonalInfoButton"><a href="javascript:void(0)" class="materialIcons">star_outline</a></div>
+            </div>
+        </div>
+        <div id="originalSideBar"></div>
+    </div>
+</div>
+
+<div id="cleanSearch" class="hidden">
+    <div id="cleanSearchBody">
+        <div id="cleanSearchTopButtons">
+            <a id="cleanCloseSearch" href="javascript:void(0)" onclick="closeSearch()">cancel</a>
+        </div>
+        <div id="cleanSearchPrompt">Search</div>
+        <div id="cleanSearchInput">
+            <input id="cleanSearchInputField" placeholder="输入关键字搜索" onkeydown="goToSearchOnEnter(event)">
+            <a id="cleanSearchButton" href="javascript:void(0)" onclick="goToSearch()">arrow_right_alt</a>
+        </div>
+    </div>
+</div>
