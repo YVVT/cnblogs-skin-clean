@@ -1,0 +1,1186 @@
+<!-- User custom -->
+<script>
+    const customConfig = {
+        avatar: 'https://pic.cnblogs.com/avatar/2943023/20221030201535.png',
+        noAd: true,
+    };
+</script>
+
+<!-- Util -->
+<script>
+    const defaultConfig = {
+        dark: false,
+        avatar: null,
+        navBarLinks: {},
+        autoExpandFloatingActions: false,
+        noAd: false,
+    };
+
+    function merge(dephault, custom) {
+        let merged = dephault;
+        for (const key in custom) {
+            if (Object.hasOwnProperty.call(custom, key)) {
+                const value = custom[key];
+                if (value !== null && value instanceof Object) {
+                    if (value instanceof Array) {
+                        for (const elem of value) {
+                            merged[key].push(elem);
+                        }
+                    } else {
+                        if (!Object.hasOwnProperty.call(dephault, key)) {
+                            dephault[key] = {};
+                        }
+                        merged[key] = merge(dephault[key], custom[key]);
+                    }
+                } else {
+                    dephault[key] = value;
+                }
+            }
+        }
+        return merged;
+    }
+
+    const currentConfig = merge(defaultConfig, customConfig);
+
+    const pages = {
+        HOME: 0, // 主页
+        MY_POSTS: 1, // 我的随笔
+        MY_COMMENTS: 2, // 评论
+        MY_PARTICIPATION: 3, // 参与
+        LATEST_COMMENTS: 4, // 最新评论
+        MY_TAGS: 5, // 所有标签
+        TAG: 6, // 具体某个标签下的随笔
+        CATEGORIES: 7,
+        CATEGORY: 8,
+        POST_ARCHIVE_MONTH: 9, // 某个月发的随笔
+        ARTICLE_ARCHIVE_MONTH: 10, // 某个月发的文章
+        POST_ARCHIVE_DAY: 11, // 某一天发的随笔
+        MOST_VIEWED: 12, // 阅读排行榜
+        MOST_COMMENTED: 13, // 评论排行榜
+        MOST_LIKED: 14, // 推荐排行榜
+        POST: 15, // 随笔
+        ARTICLE: 16, // 文章
+        DIARY: 17, // 日记
+    }
+
+    function getCurrentPage() {
+        const path = window.location.pathname;
+        const urlMap = new Map([
+            [`?/(default.html)?`, pages.HOME], // xxx xxx/ xxx/default.html
+            [`p/?`, pages.MY_POSTS],
+            [`MyComments\\.html`, pages.MY_COMMENTS],
+            [`OtherPosts\\.html`, pages.MY_PARTICIPATION],
+            [`comments/?`, pages.LATEST_COMMENTS],
+            [`tag/?`, pages.MY_TAGS],
+            [`tag/.*/?`, pages.TAG],
+            [`categories/?`, pages.CATEGORIES],
+            [`category/\\d*\\.html`, pages.CATEGORY],
+            [`archive/\\d{4}/\\d{1,2}\\.html`, pages.POST_ARCHIVE_MONTH],
+            [`archives/\\d{4}/\\d{1,2}\\.html`, pages.ARTICLE_ARCHIVE_MONTH],
+            [`archive/\\d{4}/\\d{1,2}/\\d{1,2}\\.html`, pages.POST_ARCHIVE_DAY],
+            [`most-viewed/?`, pages.MOST_VIEWED],
+            [`most-commented`, pages.MOST_COMMENTED],
+            [`most-liked`, pages.MOST_LIKED],
+            [`p/.*\\.html`, pages.POST],
+            [`articles/.*\\.html`, pages.ARTICLE],
+            [`diary/\\d{4}/\\d{1,2}/\\d{1,2}/\\d*\\.html`, pages.DIARY],
+        ]);
+        for (let pattern of urlMap.keys()) {
+            let regexp = new RegExp(`^/${currentBlogApp}/${pattern}$`, 'g');
+            if (regexp.exec(path)) return urlMap.get(pattern);
+        }
+        return -1;
+    }
+
+    const currentPage = getCurrentPage();
+
+    function loadSyncly(stuff, thing) {
+        $.ajax({
+            url: getAjaxBaseUrl() + stuff,
+            type: "get",
+            dataType: "text",
+            async: false,
+            success: thing,
+        })
+    }
+
+    function loadDataSyncly(stuff, data, thing) {
+        $.ajax({
+            url: getAjaxBaseUrl() + stuff,
+            type: "get",
+            data: data,
+            dataType: "text",
+            async: false,
+            success: thing,
+        })
+    }
+
+    function isAt(pages) {
+        return pages.includes(currentPage);
+    }
+
+    function isInDarkMode() {
+        let dark = currentConfig.dark;
+        let darkCookie = $.cookie('dark');
+        if (darkCookie !== undefined) dark = darkCookie[0] === 't';
+        return dark;
+    }
+
+    function setDarkCookie(dark) {
+        $.cookie('dark', dark.toString(), {path: `/${currentBlogApp}/`});
+    }
+</script>
+
+<script>
+    // 加载遮罩消失
+    function removeLoading() {
+        $("#loading").addClass('hidden');
+    }
+
+    // 美化日历标题
+    function beautifyCalendarTitle() {
+        let wrapped = $('#blog-calendar');
+        if (!wrapped.children().length) return;
+
+        function to2DigitString(n) {
+            let s = String(n);
+            if (s.length < 2) {
+                s = '0' + s;
+            }
+            return s;
+        }
+
+        function getCurrentYear() {
+            return $('#cleanCalendar').attr('currentYear');
+        }
+
+        function getCurrentMonth() {
+            return $('#cleanCalendar').attr('currentMonth');
+        }
+
+        function setCurrentYear(newYear) {
+            $('#cleanCalendar').attr('currentYear', String(newYear));
+        }
+
+        function setCurrentMonth(newMonth) {
+            $('#cleanCalendar').attr('currentYear', String(newMonth));
+        }
+
+        function setCurrentYearMonth(newYear, newMonth) {
+            $('#cleanCalendar').attr({
+                currentYear: String(newYear),
+                currentMonth: String(newMonth),
+            });
+        }
+
+        function updateYearMonth(newY, newM) {
+            let newDate = `${newY}/${newM}/1`;
+            setCurrentYearMonth(newY, newM)
+            $.ajax({
+                url: getAjaxBaseUrl() + "calendar.aspx",
+                data: {dateStr: newDate},
+                type: "get",
+                dataType: "text",
+                async: false,
+                success: (n) => {
+                    if (!n.trim()) return;
+                    $("#blog-calendar")
+                        .html(n)
+                        .show();
+                }
+            });
+            $('#cleanYear').text(String(getCurrentYear()));
+            $('#cleanMonth').text(to2DigitString(getCurrentMonth()));
+        }
+
+        function flipPage(prevOrNext) {
+            let newYear = getCurrentYear();
+            let newMonth = getCurrentMonth();
+
+            switch (prevOrNext[0].toLowerCase()) {
+                case 'p':
+                    newMonth--;
+                    if (newMonth < 1) {
+                        newMonth = 12;
+                        newYear--;
+                    }
+                    break;
+
+                case 'n':
+                    newMonth++;
+                    if (newMonth > 12) {
+                        newMonth = 1;
+                        newYear++;
+                    }
+                    break;
+
+                default:
+                    throw RangeError(`Illegal prevOrNext parameter value: ${prevOrNext}`);
+            }
+
+            updateYearMonth(newYear, newMonth);
+        }
+
+        let wrapper = $(`
+            <div id="cleanCalendar" class="sidebar-block">
+                <h3 class="catListTitle">
+                    <div id="cleanCalendarTitle">
+                        <div id="cleanPrevNext">
+                            <a id="cleanPrev" class="cleanPNButton">keyboard_arrow_up</a>
+                            <a id="cleanNext" class="cleanPNButton">keyboard_arrow_down</a>
+                        </div>
+                        <div id="cleanYearMonth">
+                            <span id="cleanYear" class="cleanYearMonthNumber"></span><span id="cleanMonth" class="cleanYearMonthNumber"></span>
+                        </div>
+                    </div>
+                </h3>
+            </div>
+        `)
+
+        function initCalendar() {
+            let today = new Date();
+            let y = today.getFullYear();
+            let m = today.getMonth() + 1;
+            updateYearMonth(y, m);
+        }
+
+        // insert into dom
+        wrapped
+            .before(wrapper)
+            .appendTo(wrapper);
+
+        $('#cleanPrevNext').on('click', (event) => {
+            switch (event.target.id) {
+                case "cleanPrev":
+                    flipPage('prev');
+                    break;
+
+                case "cleanNext":
+                    flipPage('next');
+                    break;
+            }
+        })
+
+        initCalendar();
+    }
+
+    // 改造“最新评论”侧边栏控件结构
+    function beautifySideBarRecentComments() {
+        let card = $("#sidebar_recentcomments");
+        if (!card.length) return;
+
+        let block = $(".RecentCommentBlock", card);
+        let titles = $(".recent_comment_title", block);
+        let comments = $(".recent_comment_body", block);
+        let authors = $(".recent_comment_author", block);
+
+        let len = titles.length;
+        let titlePattern = /\d*\.\s(.*)/;
+        let authorPattern = /--(.*)/;
+        for (let i = 0; i < len; i++) {
+            let title = titles[i]; // 1. Re:帖子标题
+            let comment = comments[i]; // 真不戳，respect
+            let author = authors[i]; // --某位大佬
+
+            let titleText = titlePattern.exec(title.innerText)[1];
+            let commentText = comment.innerText;
+            let authorText = `@${authorPattern.exec(author.innerText)[1]}`;
+            let link = $("a", title)[0].href;
+
+            block.append(`
+                <div class="cleanCommentDiv">
+                    <div class="cleanCommentAuthor">${authorText}</div>
+                    <div class="cleanCommentBody">
+                        <div class="cleanCommentContent">${commentText}</div>
+                        <a class="cleanCommentPostTitle" href="${link}">${titleText}</a>
+                    </div>
+                </div>
+            `);
+        }
+
+        $("#sidebar_recentcomments ul").css("display", "none");
+    }
+
+    // 改造“最新评论”和“我的评论”页面结构
+    function beautifyRecentComments() {
+        // 先确认是否处于相应页面
+        if (!isAt([pages.LATEST_COMMENTS, pages.MY_COMMENTS])) return;
+
+        let container = $("#myposts");
+        let bubblesContainer = $(`<div id="bubblesContainer"></div>`);
+        let nativeComments = $(".PostList");
+        if (!nativeComments.length) return;
+        let titles = $("a", ".postTitl2");
+        let authorsAndDates = $(".postDesc2");
+        let commentContents = $(".postText2");
+        let len = titles.length;
+        let authorAndDatePattern = /(.*)\s(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2})/;
+        for (let i = 0; i < len; i++) {
+            let title = titles[i];
+            let authorAndDate = authorsAndDates[i];
+            let content = commentContents[i];
+
+            let match = authorAndDatePattern.exec(authorAndDate.innerText);
+            let author = match[1];
+            let date = match[2];
+
+            bubblesContainer.append(`
+                <div class="cleanCommentDiv2">
+                    <div class="cleanAuthorAndDate2">
+                        <span class="cleanAuthor2">@${author}</span>
+                        <span class="cleanDate2">${date}</span>
+                    </div>
+                    <div class="cleanCommentBody2">
+                        <div class="cleanCommentContent2">${content.innerText}</div>
+                        <a class="cleanCommentPostTitle2" href=${title.href}>${title.innerText}</a>
+                    </div>
+                </div>
+            `);
+
+            container.prepend(bubblesContainer);
+
+            nativeComments.css("display", "none");
+        }
+    }
+
+    // 改造主页文章html结构并卡片化
+    function cardifyHomePagePosts() {
+        if (!isAt([pages.HOME, pages.POST_ARCHIVE_DAY])) return;
+        // 大的容器
+        let forFlow = $(".forFlow");
+
+        let homepageTopPager = $('#homepage_top_pager');
+        let homePageBlogContainer = $('<div id="cleanHomePageBlogContainer"></div>');
+
+        let postTitles = $(".postTitle");
+        let postCons = $(".postCon");
+        let postDescs = $(".postDesc");
+        let len = postTitles.length;
+        if (!len) return;
+        for (let i = 0; i < len; i++) {
+            let homePageBlogCard = $(`<div class="homePageBlogCard"></div>`);
+            let homePageBlogTitle = $(postTitles[i]).addClass('cleanHomePageBlogTitle');
+            let homePagePostCon = $(postCons[i]).addClass('cleanHomePagePostCon');
+            let homePageBlogDesc = $(postDescs[i]).addClass('cleanHomePageBlogDesc')
+            homePageBlogCard
+                .append(homePageBlogTitle)
+                .append(homePagePostCon)
+                .append(homePageBlogDesc)
+                .appendTo(homePageBlogContainer);
+        }
+
+        if (homepageTopPager.length) {
+            homepageTopPager.after(homePageBlogContainer)
+        } else {
+            forFlow.prepend(homePageBlogContainer);
+        }
+    }
+
+    // 分类
+    function beautifyCategoryList() {
+        let categoryListItems = $(".category-list-item, .category-link-item");
+        if (!categoryListItems.length) return;
+        let pattern = /(.*)\((\d*)\)/;
+        for (const categoryListItem of categoryListItems) {
+            let a = categoryListItem.children[0];
+            let match = pattern.exec(a.innerText);
+            let categoryTitle = match[1];
+            let blogCount = match[2];
+            a.innerText = categoryTitle;
+            $(a).after(`<span class="small">${blogCount} 篇内容</span>`);
+        }
+    }
+
+    // 将header更改为相关信息
+    function setHeaderData() {
+        let profileBlock = $('#profile_block');
+        let descs = profileBlock.contents().filter(function () {
+            return this.nodeType === this.TEXT_NODE;
+        });
+
+        function getProfileBlockData(name) {
+            return descs.filter(function () {
+                return this.textContent.trim() === name
+            }).next('a')
+        }
+
+        // title
+        function setTitle() {
+            let title = $("#Header1_HeaderTitle");
+            let cleanTitle = $('a', '#goToHome');
+            cleanTitle
+                .text(title.text())
+                .attr('href', title.attr('href'));
+        }
+
+        // subtitle
+        function setSubtitle() {
+            let subtitle = $('h2', '#blogTitle');
+            let cleanSubTitle = $('#cleanPersonalInfoTextsSignature');
+            cleanSubTitle.text(subtitle.text());
+        }
+
+        // avatar
+        function setAvatar() {
+            let avatarSrc = currentConfig.avatar;
+            if (avatarSrc === null) return;
+            let avatar = $("#secondFloorPersonalInfoAvatar");
+            avatar.attr('src', avatarSrc);
+        }
+
+        // username
+        function setUsername() {
+            let userName = getProfileBlockData('昵称：');
+            let secondFloorUserName = $('#secondFloorPersonalInfoTextsUserName');
+            secondFloorUserName
+                .text(userName.text())
+                .attr('href', userName.attr('href'));
+        }
+
+        // age
+        function setAge() {
+            let age = getProfileBlockData('园龄：');
+            let secondFloorAge = $('#secondFloorPersonalInfoTextsAge');
+            secondFloorAge
+                .text(`园龄:${age.text()}`)
+                .attr('href', age.attr('href'))
+                .attr('title', age.attr('title'));
+        }
+
+        function setHonor() {
+            let honor = getProfileBlockData('荣誉：');
+            if (!honor.length) return;
+            $('#secondFloorPersonalInfoTextsHonor')
+                .addClass('hasHonor')
+                .text(honor.text())
+                .attr('href', honor.attr('href'));
+        }
+
+        // stats
+        function setStats() {
+            // regex
+            const statsPattern = /.*\s*-\s*(\d*)万?/;
+
+            function setStatFromAnnouncement(className, id) {
+                let nativeA = $(`a.${className}`, '#profile_block');
+                let cleanA = $('a', id);
+                cleanA
+                    .text(nativeA.text())
+                    .attr('href', nativeA.attr('href'));
+            }
+
+            function setStatFromNativeNavBar(nativeId, cleanId, href) {
+                if (href === undefined) href = 'javascript:void(0)';
+                let native = $(nativeId);
+                let clean = $('a', cleanId);
+                let text = statsPattern.exec(native.text())[1];
+                clean
+                    .text(text)
+                    .attr('href', href);
+            }
+
+            // followers
+            function setFollowers() {
+                setStatFromAnnouncement('follower-count', '#secondFloorPersonalInfoTextsStatsFollowers')
+            }
+
+            // followees
+            function setFollowees() {
+                setStatFromAnnouncement('folowing-count', '#secondFloorPersonalInfoTextsStatsFollowees')
+            }
+
+            // writings
+            function setWritings() {
+                setStatFromNativeNavBar("#stats_post_count", '#secondFloorPersonalInfoTextsStatsWritings', `https://www.cnblogs.com/${currentBlogApp}/p/`);
+            }
+
+            // articles
+
+            function setArticles() {
+                setStatFromNativeNavBar("#stats_article_count", '#secondFloorPersonalInfoTextsStatsArticles')
+            }
+
+            // comments
+            function setComments() {
+                setStatFromNativeNavBar("#stats-comment_count", '#secondFloorPersonalInfoTextsStatsComments', `https://www.cnblogs.com/${currentBlogApp}/comments`)
+            }
+
+            // readings
+            function setReadings() {
+                let readings = $('span', '#stats-total-view-count');
+                let secondFloorReadings = $('a', '#secondFloorPersonalInfoTextsStatsReading');
+                secondFloorReadings
+                    .attr('title', readings.attr('title'))
+                    .text(readings.text());
+            }
+
+            setFollowers();
+            setFollowees();
+            setWritings();
+            setArticles();
+            setComments();
+            setReadings();
+            setAvatar();
+        }
+
+        // contact
+        function setContactHref() {
+            let contact = $('#blog_nav_contact');
+            let cleanContact = $('a', '#secondFloorPersonalInfoContact');
+            cleanContact.attr('href', contact.attr('href'));
+        }
+
+        // subscribe
+        function setSubscribe() {
+            let subscription = $('#blog_nav_rss');
+            let cleanSubscription = $('a', '#secondFloorPersonalInfoRss');
+
+            if (isBlogOwner) {
+                cleanSubscription.on('click', () => {
+                    subscription.click();
+                })
+                return;
+            }
+
+            function subscribe() {
+                subscription.click();
+                cleanSubscription
+                    .one('click', () => {
+                        unsubscribe();
+                    })
+                    .addClass('isSubscribing');
+            }
+
+            function unsubscribe() {
+                subscription.click();
+                cleanSubscription
+                    .one('click', () => {
+                        subscribe();
+                    })
+                    .removeClass('isSubscribing');
+            }
+
+            let isSubscribing = subscription.text() === '已订阅';
+            if (isSubscribing) {
+                cleanSubscription
+                    .addClass('isSubscribing')
+                    .one('click', () => {
+                        unsubscribe();
+                    });
+            } else {
+                cleanSubscription
+                    .removeClass('isSubscribing')
+                    .one('click', () => {
+                        subscribe();
+                    });
+            }
+        }
+
+        // follow/unfollow
+        function setFollow() {
+            let cleanFollow = $('#secondFloorPersonalInfoFollowUnfollow');
+            if (isBlogOwner) {
+                cleanFollow.css('display', 'none');
+                return;
+            }
+
+            let following = $('a', '#p_b_follow');
+            let followPattern = /u?n?follow\('(.*)'\);?$/;
+            let hexId = followPattern.exec(following.attr('onclick'))[1];
+
+            function folow() {
+                follow(hexId);
+                cleanFollow
+                    .removeClass('isNotFollowing')
+                    .addClass('isFollowing');
+                $('a', cleanFollow)
+                    .one('click', () => {
+                        unfolow();
+                    })
+                    .text('已关注');
+            }
+
+            function unfolow() {
+                unfollow(hexId);
+                cleanFollow
+                    .removeClass('isFollowing')
+                    .addClass('isNotFollowing');
+                $('a', cleanFollow)
+                    .one('click', () => {
+                        folow();
+                    })
+                    .text('关注我');
+            }
+
+            let isFollowing = following.text()[0] === '-';
+
+            if (isFollowing) {
+                cleanFollow.addClass('isFollowing');
+                $('a', cleanFollow)
+                    .one('click', () => {
+                        unfolow();
+                    })
+                    .text('已关注');
+            } else {
+                cleanFollow.addClass('isNotFollowing')
+                $('a', cleanFollow)
+                    .one('click', () => {
+                        folow();
+                    })
+                    .text('关注我');
+            }
+        }
+
+        // native nav bar
+        function setNativeNavBar() {
+            let nativeNavBarLinks = $('a', '#navList li');
+            let topRightNavBarList = $('ul', '#expandNativeNavBar')
+            for (const link of nativeNavBarLinks) {
+                let li = $('<li class="cleanNavBarDropDownListItem"></li>');
+                li.append(link);
+                topRightNavBarList.append(li);
+            }
+        }
+
+        setTitle();
+        setSubtitle();
+        setUsername();
+        setAge();
+        setHonor();
+        setStats();
+        setContactHref();
+        setSubscribe();
+        setFollow();
+        setNativeNavBar();
+    }
+
+    // topLinks
+    function setNavBarCustomLinks() {
+        let links = currentConfig.navBarLinks;
+        if (links === null) return;
+        let cleanCustomLinks = $("#cleanCustomLinks");
+        let cleanCustomLinksIfTooNarrow = $("ul", "#expandCustomLinksIfTooNarrow");
+        for (const linkName in links) {
+            if (Object.hasOwnProperty.call(links, linkName)) {
+                const hrefOrDropDownLinks = links[linkName];
+                if (typeof hrefOrDropDownLinks == 'string' || hrefOrDropDownLinks instanceof String) {
+                    cleanCustomLinks.append(`<li class="cleanCustomLink"><a href="${hrefOrDropDownLinks}">${linkName}</a></li>`);
+                    cleanCustomLinksIfTooNarrow
+                        .append(`<li class="cleanCustomDropDownListItem"><a href="${hrefOrDropDownLinks}">${linkName}</a></li>`);
+                } else {
+                    let cleanNavBarLinkWithDropDown = $(`
+                        <li class="cleanCustomLink cleanCustomLinkWithDropDown">
+                            <a href="javascript:void(0)">${linkName}</a>
+                            <div class="cleanCustomDropDownPositioner">
+                                <div class="cleanCustomDropDown">
+                                    <div class="cleanCustomDropDownTriangle"></div>
+                                    <ul class="cleanCustomDropDownList">
+                                    </ul>
+                                </div>
+                            </div>
+                        </li>
+                    `)
+                    let cleanSecondaryNavNarLinkIfTooNarrow = $(`
+                        <li class="cleanCustomDropDownListItem cleanCustomDropDownListItemWithSecondaryMenu">
+                            <a href="javascript:void(0)">${linkName}</a>
+                            <div class="cleanCustomSecondaryDropDownPositioner">
+                                <div class="cleanCustomSecondaryDropDown">
+                                    <div class="cleanCustomSecondaryDropDownTriangle"></div>
+                                    <ul class="cleanCustomDropDownList cleanCustomSecondaryDropDownList">
+                                    </ul>
+                                </div>
+                            </div>
+                        </li>
+                    `)
+                    for (const secondaryLinkName in hrefOrDropDownLinks) {
+                        if (Object.hasOwnProperty.call(hrefOrDropDownLinks, secondaryLinkName)) {
+                            const secondaryHref = hrefOrDropDownLinks[secondaryLinkName];
+                            $('ul', cleanNavBarLinkWithDropDown)
+                                .append(`<li class="cleanCustomDropDownListItem"><a href="${secondaryHref}">${secondaryLinkName}</a></li>`);
+                            $('ul', cleanSecondaryNavNarLinkIfTooNarrow)
+                                .append(`<li class="cleanCustomDropDownListItem"><a href="${secondaryHref}">${secondaryLinkName}</a></li>`);
+                        }
+                    }
+                    cleanCustomLinks.append(cleanNavBarLinkWithDropDown);
+                    cleanCustomLinksIfTooNarrow.append(cleanSecondaryNavNarLinkIfTooNarrow);
+                }
+            }
+        }
+        // hide sandwich menu if no links
+        if (Object.keys(links).length === 0) {
+            $("#expandCustomLinksIfTooNarrow").css('display', 'none');
+        }
+    }
+
+    // 切换深色/浅色模式
+    function toggleLightDarkMode() {
+        if (isInDarkMode()) {
+            $('html').attr('dark', 'false');
+            $('a', '#cleanToggleMode').text('dark_mode');
+            $('.cleanNavBarToolTipText', '#cleanToggleMode').text('深色模式');
+            setDarkCookie(false);
+        } else {
+            $('html').attr('dark', 'true');
+            $('a', '#cleanToggleMode').text('light_mode');
+            $('.cleanNavBarToolTipText', '#cleanToggleMode').text('浅色模式');
+            setDarkCookie(true);
+        }
+    }
+
+    function openSearch() {
+        $('#cleanSearch').removeClass('hidden');
+        $('body').addClass('code-fullscreen-body');
+        $('#cleanSearchInputField')[0].focus();
+    }
+
+    function closeSearch() {
+        $('#cleanSearch').addClass('hidden');
+        $('body').removeClass('code-fullscreen-body');
+    }
+
+    function goToSearch() {
+        window.location = 'http://zzk.cnblogs.com/s?w=' + encodeURIComponent(`blog:${currentBlogApp} ${$('#cleanSearchInputField')[0].value}`)
+    }
+
+    function goToSearchOnEnter(event) {
+        if (event.keyCode !== 13) return;
+        goToSearch();
+    }
+
+    // dark
+    function initDarkMode() {
+        if (isInDarkMode()) {
+            $('html').attr('dark', 'true');
+            $('a', '#cleanToggleMode').text('light_mode');
+            $('.cleanNavBarToolTipText', '#cleanToggleMode').text('浅色模式');
+        }
+    }
+
+    function expandSecondFloor() {
+        $('#secondFloor').addClass('expanded');
+        $('body').addClass('code-fullscreen-body');
+    }
+
+    function collapseSecondFloor() {
+        $('#secondFloor').removeClass('expanded');
+        $('body').removeClass('code-fullscreen-body');
+    }
+
+    function moveSideBarCardsToSecondFloor() {
+        if ($("#blog-sidecolumn").length) {
+            loadSyncly("sidecolumn.aspx", sideColumn => {
+                if (!sideColumn) return;
+                $("#blog-sidecolumn").html(sideColumn);
+                if (!$("#blog-sidecolumn").length) return;
+                loadSyncly("TopLists.aspx", topLists => {
+                    if (!topLists) return;
+                    if ($("#sidebar_recentcomments").length) {
+                        $(topLists).insertBefore("#sidebar_recentcomments")
+                    } else {
+                        $("#blog-sidecolumn").append(topLists)
+                    }
+                })
+            })
+        }
+        let sideBarCards = $('#sidebar_news, .sidebar-block', '#sideBarMain');
+        let secondFloorSideBar = $('#originalSideBar');
+        sideBarCards
+            .addClass('secondFloorCard')
+            .appendTo(secondFloorSideBar);
+    }
+
+    function hideBlogTitleInNonMainPage() {
+        if (isAt([pages.HOME])) return;
+        $('#blogTitle').css('display', 'none');
+    }
+
+    function addFloatingMenu() {
+        if (!isAt([pages.POST, pages.ARTICLE, pages.DIARY])) return;
+
+        function showRespectEffect() {
+            let effect = $('#respectEffect');
+            effect.addClass('on');
+            setTimeout(() => {
+                effect.removeClass('on');
+            }, 800);
+        }
+
+        function goToTop() {
+            scrollTo(0, 0);
+        }
+
+        function respect() {
+            if (!isLogined || isBlogOwner) return;
+            if (currentDiggType) return;
+            $('#floatingRespect').addClass('on');
+            showRespectEffect();
+            $('.diggit').click();
+        }
+
+        function diss() {
+            if (!isLogined || isBlogOwner) return;
+            if (currentDiggType) return;
+            $('#floatingDiss').addClass('on');
+            $('.buryit').click();
+        }
+
+        function favorite() {
+            $('#green_channel_favorite').click();
+        }
+
+        function goToComments() {
+            let comments = $('#blog-comments-placeholder');
+            if (!comments.children().length) comments = $('#comment_form');
+            comments[0].scrollIntoView();
+        }
+
+        function toggleExpand() {
+            $('#floatingActions').toggleClass('expanded');
+        }
+
+        let initRespectDissState = () => {
+            switch (currentDiggType) {
+                case 1:
+                    $('#floatingRespect').addClass('on');
+                    break;
+
+                case 2:
+                    $('#floatingDiss').addClass('on');
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        let floatingMenu = $(`
+            <div id="floatingActions">
+                <div id="floatingButtons">
+                    <div id="floatingTop" class="floatingButton">arrow_circle_up</div>
+                    <div id="floatingRespect" class="floatingButton">
+                        thumb_up
+                        <div id="respectEffect">RESPECT!</div>
+                    </div>
+                    <div id="floatingDiss" class="floatingButton">thumb_down</div>
+                    <div id="floatingFav" class="floatingButton">bookmark</div>
+                    <div id="floatingComments" class="floatingButton">comment</div>
+                </div>
+                <div id="floatingExpandCollapse" class="floatingButton">keyboard_arrow_up</div>
+            </div>
+        `);
+
+        $('#post_detail').append(floatingMenu);
+
+        floatingMenu.on('click', (event) => {
+            let doThingsById = {
+                "floatingTop": goToTop,
+                "floatingRespect": respect,
+                "floatingDiss": diss,
+                "floatingFav": favorite,
+                "floatingComments": goToComments,
+                "floatingExpandCollapse": toggleExpand,
+            }
+            let id = event.target.id;
+            if (Object.hasOwnProperty.call(doThingsById, id)) {
+                doThingsById[id]();
+            }
+        })
+
+        initRespectDissState();
+
+        if (currentConfig.autoExpandFloatingActions) {
+            toggleExpand();
+        }
+    }
+
+    function beautifyBlogDetailBottomFollowButton() {
+        if (!isAt([pages.POST, pages.ARTICLE, pages.DIARY])) return;
+        if (!isLogined || isBlogOwner) return;
+
+        let button = $(`
+            <div id="blogDetailFollowButton">
+                <a href="javascript:void(0)"></a>
+            </div>
+        `);
+
+        let nativeFollow = $('a', '#p_b_follow');
+        let followPattern = /u?n?follow\('(.*)'\);?$/;
+        let hexId = followPattern.exec(nativeFollow.attr('onclick'))[1];
+
+        function folow() {
+            follow(hexId);
+            button
+                .removeClass('isNotFollowing')
+                .addClass('isFollowing');
+            $('a', button)
+                .one('click', () => {
+                    unfolow();
+                })
+                .text('已关注');
+        }
+
+        function unfolow() {
+            unfollow(hexId);
+            button
+                .removeClass('isFollowing')
+                .addClass('isNotFollowing');
+            $('a', button)
+                .one('click', () => {
+                    folow();
+                })
+                .text('关注我');
+        }
+
+        let isFollowing = nativeFollow.text()[0] === '-';
+
+        if (isFollowing) {
+            button.addClass('isFollowing');
+            $('a', button)
+                .one('click', () => {
+                    unfolow();
+                })
+                .text('已关注');
+        } else {
+            button.addClass('isNotFollowing')
+            $('a', button)
+                .one('click', () => {
+                    folow();
+                })
+                .text('关注我');
+        }
+
+        $('#author_profile').append(button);
+    }
+
+    function addButtonsBelowBlogDetail() {
+        if (!isAt([pages.POST, pages.ARTICLE, pages.DIARY])) return;
+
+        function showRespectEffect() {
+            let effect = $('#blogDetailBottomRespectEffect');
+            effect.addClass('on');
+            setTimeout(() => {
+                effect.removeClass('on');
+            }, 800);
+        }
+
+        function respect() {
+            $('.diggit').click();
+            if (!isLogined || isBlogOwner) return;
+            $('#blogDetailBottomRespect').addClass('on');
+            showRespectEffect();
+        }
+
+        function diss() {
+            $('.buryit').click();
+            if (!isLogined || isBlogOwner) return;
+            $('#blogDetailBottomDiss').addClass('on');
+        }
+
+        function fav() {
+            $('#green_channel_favorite').click();
+        }
+
+        function initRespectDissState() {
+            switch (currentDiggType) {
+                case 1:
+                    $('#blogDetailBottomRespect').addClass('on');
+                    break;
+
+                case 2:
+                    $('#blogDetailBottomDiss').addClass('on');
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        // span#xxxx_count.xxxxnum
+        let buttons = $(`
+            <div id="blogDetailBottomArea">
+                <div id="blogDetailBottomButtons">
+                    <div id="blogDetailBottomRespect" class="blogDetailBottomDiv">
+                        <div class="blogDetailBottomButton">
+                            thumb_up
+                            <span id="blogDetailBottomRespectEffect">RESPECT!</span>
+                        </div>
+                        <!-- <span class="blogDetailBottomText"></span> -->
+                    </div>
+                    <div id="blogDetailBottomDiss" class="blogDetailBottomDiv">
+                        <div class="blogDetailBottomButton">thumb_down</div>
+                        <!-- span -->
+                    </div>
+                    <div id="blogDetailBottomFav" class="blogDetailBottomDiv">
+                        <div class="blogDetailBottomButton">bookmark</div>
+                        <span class="blogDetailBottomText">收藏</span>
+                    </div>
+                    <div id="blogDetailBottomShare" class="blogDetailBottomDiv">
+                        <div class="blogDetailBottomButton">share</div>
+                        <div id="shareMenu">
+                            <div id="shareMenuBody">
+                                <div id="shareMenuTriangle"></div>
+                                <ul>
+                                    <li id="shareToWeibo"><a href="javascript:void(0)">微博</a></li>
+                                    <li id="shareToWeChat"><a href="javascript:void(0)">微信</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <span class="blogDetailBottomText">分享</span>
+                    </div>
+                </div>
+                <!-- <div class="diggword" id="digg_tips"></div> -->
+            </div>
+        `);
+
+        function moveDiggNum() {
+            $('#digg_count')
+                .addClass('blogDetailBottomText')
+                .appendTo('#blogDetailBottomRespect')
+        }
+
+        function moveBuryNum() {
+            $('#bury_count')
+                .addClass('blogDetailBottomText')
+                .appendTo('#blogDetailBottomDiss')
+        }
+
+        function moveDiggTips() {
+            $('#blogDetailBottomArea').append($('#digg_tips'));
+        }
+
+        $('#author_profile').after(buttons);
+
+        moveDiggNum();
+        moveBuryNum();
+        moveDiggTips();
+        initRespectDissState();
+
+        buttons.on('click', (event) => {
+            switch (event.target) {
+                case $('.blogDetailBottomButton', '#blogDetailBottomRespect')[0]:
+                    respect();
+                    break;
+
+                case $('.blogDetailBottomButton', '#blogDetailBottomDiss')[0]:
+                    diss();
+                    break;
+
+                case $('.blogDetailBottomButton', '#blogDetailBottomFav')[0]:
+                    fav();
+                    break;
+
+                case $('a', '#shareToWeibo')[0]:
+                    ShareToTsina();
+                    break;
+
+                case $('a', '#shareToWeChat')[0]:
+                    shareOnWechat();
+                    break;
+
+                default:
+                    break;
+            }
+        })
+    }
+
+    function removeAd() {
+        if (!currentConfig.noAd) return;
+        $('#cnblogs_c1, #cnblogs_ch').css({
+            height: 0,
+            visibility: 'hidden'
+        });
+    }
+
+    function beautifyBlogPrevNext() {
+        if (!isAt([pages.POST, pages.ARTICLE, pages.DIARY])) return;
+
+        let container = $('#post_next_prev');
+        let cleanPrevNext = $(`
+            <div id="cleanPostNextPrevBody">
+                <div id="cleanPostPrev" class="cleanPostNextPrev"></div>
+                <div id="cleanPostNext" class="cleanPostNextPrev"></div>
+            </div>
+        `);
+        let cleanPrev = $(`
+            <a>
+                <div class="cleanPostNextPrevHint">
+                    <span class="cleanPostNextPrevArrow">keyboard_arrow_left</span>
+                    <span class="cleanPostNextPrevHintText">PREVIOUS</span>
+                </div>
+                <div class="cleanPostNextPrevTitle"></div>
+            </a>
+        `);
+        let cleanNext = $(`
+            <a>
+                <div class="cleanPostNextPrevHint">
+                    <span class="cleanPostNextPrevHintText">NEXT</span>
+                    <span class="cleanPostNextPrevArrow">keyboard_arrow_right</span>
+                </div>
+                <div class="cleanPostNextPrevTitle"></div>
+            </a>
+        `);
+        let originalPrevNextArrows = $('.p_n_p_prefix');
+
+        function addContent(divId, a, arrow, prefix) {
+            let div = $(divId, cleanPrevNext);
+            a.attr('href', arrow.href);
+            $('.cleanPostNextPrevTitle', a).text(prefix + $(arrow).next('a').text());
+            div.append(a);
+        }
+
+        for (const arrow of originalPrevNextArrows) {
+            switch (arrow.innerText[0]) {
+                case '«':
+                    addContent('#cleanPostPrev', cleanPrev, arrow, '上一篇 | ');
+                    break;
+
+                case '»':
+                    addContent('#cleanPostNext', cleanNext, arrow, '下一篇 | ');
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        container.append(cleanPrevNext)
+    }
+
+    function addAvatarBeforeComment() {
+        if (!isAt([pages.POST, pages.ARTICLE, pages.DIARY])) return;
+        function _addAvatarBeforeComment() {
+            let feedbackItems = $('.feedbackItem');
+            for (let feedbackItem of feedbackItems) {
+                let no = $('.layer', feedbackItem).attr('href').substring(1);
+                let avatarUrl = $(`#comment_${no}_avatar`).text().trim();
+                let userUrl = $(`#a_comment_author_${no}`).attr('href').trim();
+                let userName = $(`#a_comment_author_${no}`).text();
+                let avatar = $(`<a class="cleanCommentAvatar" href=${userUrl}></a>`)
+                    .append(`<img class="cleanCommentAvatarImg" src=${avatarUrl} alt="${userName}的头像">`);
+                $(feedbackItem).prepend(avatar);
+            }
+        }
+
+        _addAvatarBeforeComment();
+    }
+
+    window.onload = () => {
+        initDarkMode();
+        setHeaderData();
+        setNavBarCustomLinks();
+        beautifyCalendarTitle();
+        moveSideBarCardsToSecondFloor();
+        beautifySideBarRecentComments();
+        beautifyRecentComments();
+        cardifyHomePagePosts();
+        beautifyCategoryList();
+        hideBlogTitleInNonMainPage();
+        addFloatingMenu();
+        beautifyBlogDetailBottomFollowButton();
+        addAvatarBeforeComment();
+        addButtonsBelowBlogDetail();
+        beautifyBlogPrevNext();
+        removeAd();
+        removeLoading();
+    };
+</script>
