@@ -119,7 +119,7 @@ textarea {
 #header,
 #main {
     /* 设置整个页面最大宽度，实现宽度自适应 */
-    max-width: 1100px;
+    max-width: 1050px;
     /* 整个页面居中 */
     margin: auto;
     /* 左右边距 */
@@ -1341,7 +1341,7 @@ input.btn_my_zzk {
 #cleanNavBarBody {
     position: relative;
     top: 0;
-    max-width: 1200px;
+    max-width: 1150px;
     margin: auto;
     /* padding: 20px; */
     display: flex;
@@ -1909,7 +1909,7 @@ input.btn_my_zzk {
 }
 
 #secondFloorBody {
-    max-width: 1200px;
+    max-width: 1150px;
     margin: auto;
     display: flex;
     flex-direction: column;
